@@ -14,10 +14,6 @@ BETA_KEY=${6:-$Z_BETA_KEY}
 LIMIT=${3:-50}
 
 
-# THE ALPHA REPAIR: We pull the first line and 'Shatter' the commas to see the columns
-HEADERS=$(head -n 1 "$CSV_FILE")
-
-echo "DETECTED: [$HEADERS]"
 
 
 if ! command -v python3 &> /dev/null; then
