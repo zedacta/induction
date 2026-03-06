@@ -27,13 +27,24 @@ fi
 # 1. THE DATA SIPHON: We buffer the pipe into memory to prevent FileNotFoundError
 RAW_ORE_BUFFER=$(cat "$CSV_FILE")
 
-# 2. THE ALPHA REPAIR: Physically print the column manifest
+export Z_RAW_ORE=$(cat "$CSV_FILE")
+
+# 2. THE ALPHA REPAIR: Audit the headers via the Environment Vault
 echo -n "[0/5] AUDITING ORE HEADERS... "
-COLUMNS=$(python3 -c "import csv, io; r=csv.reader(io.StringIO('''$RAW_ORE_BUFFER''')); print(next(r))")
+COLUMNS=$(python3 <<'EOF'
+import csv, io, os, sys
+try:
+    # We fetch the ore from the environment to prevent Unicode Fractures
+    r = csv.reader(io.StringIO(os.environ['Z_RAW_ORE']))
+    print(next(r))
+except Exception:
+    sys.exit(1)
+EOF
+)
 
 echo "DETECTED: $COLUMNS"
 
-# 3. THE GASKET: Verify the target 'message' is in that list
+# 3. THE GASKET: Verify the target 'message' is in that manifest
 if [[ ! "$COLUMNS" == *"$COL_NAME"* ]]; then
     echo "--------------------------------------------------------"
     echo "ERROR: COLUMN IDENTITY FRACTURE"
@@ -41,6 +52,7 @@ if [[ ! "$COLUMNS" == *"$COL_NAME"* ]]; then
     echo "--------------------------------------------------------"
     exit 1
 fi
+
 
 # --- STEP 0: KINETIC GUARDS ---
 if [ -z "$2" ]; then 
