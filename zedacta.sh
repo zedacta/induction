@@ -24,9 +24,7 @@ if [ -z "$SERVER_IP" ] || [ -z "$BETA_KEY" ]; then
 fi
 
 
-# 1. THE DATA SIPHON: We buffer the pipe into memory to prevent FileNotFoundError
-RAW_ORE_BUFFER=$(cat "$CSV_FILE")
-
+# 1. THE DATA SIPHON: Buffer the pipe into the environment
 export Z_RAW_ORE=$(cat "$CSV_FILE")
 
 # 2. THE ALPHA REPAIR: Audit the headers via the Environment Vault
