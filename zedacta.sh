@@ -12,6 +12,23 @@ BETA_KEY=${6:-$Z_BETA_KEY}
 
 LIMIT=${3:-50}
 
+
+
+
+# THE ALPHA REPAIR: We pull the first line and 'Shatter' the commas to see the columns
+HEADERS=$(head -n 1 "$CSV_FILE")
+
+echo "DETECTED: [$HEADERS]"
+
+# THE GASKET: Verify the target 'message' is in that manifest
+if [[ ! "$HEADERS" == *"$COL_NAME"* ]]; then
+    echo "--------------------------------------------------------"
+    echo "ERROR: COLUMN IDENTITY FRACTURE"
+    echo "TARGET: '$COL_NAME' NOT FOUND IN MANIFEST."
+    echo "--------------------------------------------------------"
+    exit 1
+fi
+
 if ! command -v python3 &> /dev/null; then
     echo "ERROR: PYTHON 3 NOT DETECTED. THE OBSIDIAN REACTOR REQUIRES A PYTHON CORE FOR INDUCTION."
     exit 1
@@ -22,35 +39,6 @@ if [ -z "$SERVER_IP" ] || [ -z "$BETA_KEY" ]; then
     echo "ERROR: REACTOR OFFLINE. SET Z_SERVER_IP AND Z_BETA_KEY TO IGNITE."
     exit 1
 fi
-
-
-# 1. THE DATA SIPHON: Buffer the pipe into the environment
-export Z_RAW_ORE=$(cat "$CSV_FILE")
-
-# 2. THE ALPHA REPAIR: Audit the headers via the Environment Vault
-echo -n "[0/5] AUDITING ORE HEADERS... "
-COLUMNS=$(python3 <<'EOF'
-import csv, io, os, sys
-try:
-    # We fetch the ore from the environment to prevent Unicode Fractures
-    r = csv.reader(io.StringIO(os.environ['Z_RAW_ORE']))
-    print(next(r))
-except Exception:
-    sys.exit(1)
-EOF
-)
-
-echo "DETECTED: $COLUMNS"
-
-# 3. THE GASKET: Verify the target 'message' is in that manifest
-if [[ ! "$COLUMNS" == *"$COL_NAME"* ]]; then
-    echo "--------------------------------------------------------"
-    echo "ERROR: COLUMN IDENTITY FRACTURE"
-    echo "TARGET: '$COL_NAME' NOT FOUND IN MANIFEST."
-    echo "--------------------------------------------------------"
-    exit 1
-fi
-
 
 # --- STEP 0: KINETIC GUARDS ---
 if [ -z "$2" ]; then 
