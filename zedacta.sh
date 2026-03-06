@@ -73,21 +73,16 @@ fi
 # --- STEP 2: DIRECT INJECTION ---
 echo -n "[2/5] SMELTING DATA ORE... "
 
-# THE ALPHA REPAIR: We "Armor" the data as an Env Var to prevent Python parsing errors
-export Z_RAW_ORE=$(cat "$CSV_FILE")
+RAW_DATA=$(cat "$CSV_FILE")
 
-PAYLOAD=$(python3 <<'EOF'
-import csv, json, io, sys, os
-# We Siphon the ore from the environment, not the string
-r = csv.DictReader(io.StringIO(os.environ['Z_RAW_ORE']))
+PAYLOAD=$(python3 <<EOF
+import csv, json, io, sys
+# Bash physically injects the RAW_DATA string here
+r = csv.DictReader(io.StringIO("""$RAW_DATA"""))
 try:
-    # Bit-for-bit extraction of the $COL_NAME and $LIMIT variables from the parent shell
-    col = os.environ['COL_NAME']
-    limit = int(os.environ['LIMIT'])
-    d = [{'id': i+1, col: row[col].replace('\n', ' ')} for i, row in enumerate(r) if i < limit]
-    
-    # We reconstruct the manifest with the $CLASS and $SCHEMA from Step 1
-    print(json.dumps({'blueprint_class': os.environ['CLASS'], 'schema_definition': json.loads(os.environ['SCHEMA']), 'data': d}))
+    # Bash injects the $COL_NAME and $LIMIT variables
+    d = [{'id': i+1, '$COL_NAME': row['$COL_NAME'].replace('\n', ' ')} for i, row in enumerate(r) if i < $LIMIT]
+    print(json.dumps({'blueprint_class': '$CLASS', 'schema_definition': $SCHEMA, 'data': d}))
 except KeyError:
     sys.exit(1)
 EOF
