@@ -98,7 +98,14 @@ except KeyError:
     sys.exit(1)
 EOF
 )
-
+if [[ "$COL_CHECK" == FRACTURE* ]]; then
+    echo "--------------------------------------------------------"
+    echo "ERROR: COLUMN IDENTITY FRACTURE"
+    echo "TARGET: '$COL_NAME'"
+    echo "$COL_CHECK" | cut -d':' -f2
+    echo "--------------------------------------------------------"
+    exit 1
+fi
 if [[ $? -ne 0 ]]; then
     echo -e "\nERROR: Column '$COL_NAME' not found in the ore. Reactor Refusal."
     exit 1
