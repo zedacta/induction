@@ -27,32 +27,20 @@ fi
 # 1. THE DATA SIPHON: We buffer the pipe into memory to prevent FileNotFoundError
 RAW_ORE_BUFFER=$(cat "$CSV_FILE")
 
-# 2. THE ALPHA REPAIR: We physically audit the headers for BOM or Case-Sensitivity
-COL_CHECK=$(python3 -c "import csv, io, os; 
-# We use utf-8-sig to kill any hidden Byte Order Marks from the GitHub stream
-r = csv.reader(io.StringIO(os.environ['RAW_ORE']))
-h = next(r)
-target = os.environ['TARGET'].strip()
-if target in h:
-    print('VALID')
-else:
-    print('FRACTURE: Available columns are: ' + str(h))
-" <<EOF
-export RAW_ORE="$RAW_ORE_BUFFER"
-export TARGET="$COL_NAME"
-EOF
-)
+# 2. THE ALPHA REPAIR: Physically print the column manifest
+echo -n "[0/5] AUDITING ORE HEADERS... "
+COLUMNS=$(python3 -c "import csv, io; r=csv.reader(io.StringIO('''$RAW_ORE_BUFFER''')); print(next(r))")
 
-# 3. THE GASKET: Shatter the induction if the column is missing
-if [[ "$COL_CHECK" != "VALID" ]]; then
+echo "DETECTED: $COLUMNS"
+
+# 3. THE GASKET: Verify the target 'message' is in that list
+if [[ ! "$COLUMNS" == *"$COL_NAME"* ]]; then
     echo "--------------------------------------------------------"
     echo "ERROR: COLUMN IDENTITY FRACTURE"
-    echo "TARGET: '$COL_NAME'"
-    echo "$COL_CHECK" | sed 's/VALID//g'
+    echo "TARGET: '$COL_NAME' NOT FOUND IN MANIFEST."
     echo "--------------------------------------------------------"
     exit 1
 fi
-
 
 # --- STEP 0: KINETIC GUARDS ---
 if [ -z "$2" ]; then 
