@@ -23,25 +23,36 @@ if [ -z "$SERVER_IP" ] || [ -z "$BETA_KEY" ]; then
     exit 1
 fi
 
-# THE ALPHA REPAIR: We physically print the available columns to reveal "Visual Slag"
-COL_CHECK=$(python3 -c "import csv, sys; 
-with open('$CSV_FILE', 'r') as f:
-    h = next(csv.reader(f))
-    if '$COL_NAME' in h:
-        print('VALID')
-    else:
-        print('FRACTURE: Available columns are: ' + str(h))
-")
 
-# THE GASKET: We audit the check RIGHT HERE, before Step 1
-if [[ "$COL_CHECK" == FRACTURE* ]]; then
+# 1. THE DATA SIPHON: We buffer the pipe into memory to prevent FileNotFoundError
+RAW_ORE_BUFFER=$(cat "$CSV_FILE")
+
+# 2. THE ALPHA REPAIR: We physically audit the headers for BOM or Case-Sensitivity
+COL_CHECK=$(python3 -c "import csv, io, os; 
+# We use utf-8-sig to kill any hidden Byte Order Marks from the GitHub stream
+r = csv.reader(io.StringIO(os.environ['RAW_ORE']))
+h = next(r)
+target = os.environ['TARGET'].strip()
+if target in h:
+    print('VALID')
+else:
+    print('FRACTURE: Available columns are: ' + str(h))
+" <<EOF
+export RAW_ORE="$RAW_ORE_BUFFER"
+export TARGET="$COL_NAME"
+EOF
+)
+
+# 3. THE GASKET: Shatter the induction if the column is missing
+if [[ "$COL_CHECK" != "VALID" ]]; then
     echo "--------------------------------------------------------"
     echo "ERROR: COLUMN IDENTITY FRACTURE"
     echo "TARGET: '$COL_NAME'"
-    echo "$COL_CHECK" | cut -d':' -f2
+    echo "$COL_CHECK" | sed 's/VALID//g'
     echo "--------------------------------------------------------"
     exit 1
 fi
+
 
 # --- STEP 0: KINETIC GUARDS ---
 if [ -z "$2" ]; then 
