@@ -177,39 +177,54 @@ EOF
     sleep 0.1
 done
 
+# --- STEP 4: SECURING GAVEL-VERIFIED LEDGER ---
 echo -n "[4/5] SECURING GAVEL-VERIFIED LEDGER: ["
-for i in {1..20}; do
-    echo -n "#"
-    sleep 0.02
-done
-echo "] COMPLETE"
 
+# THE ALPHA REPAIR: Default to true unless explicitly set to false
+REMOTE=${REMOTE:-true}
 RAW_FILENAME="data/chute/$BATCH_ID.json"
-if [[ "${REMOTE:-false}" == "true" ]]; then
+mkdir -p "data/chute"
+
+if [[ "$REMOTE" == "true" ]]; then
+    # We use -f to fail fast if the server hasn't bit-for-bit sealed the JSON
     curl -s -f -o "$RAW_FILENAME" "http://$SERVER_IP:8000/v1/results/$BATCH_ID"
 fi
 
-# --- STEP 5: GENERATING THE MANIFEST ---
-# We use a 0.2s 'Snap' rail to lead directly into the PDF auto-open
-echo -n "[5/5] GENERATING FORENSIC MANIFEST:   ["
-for i in {1..20}; do
-    echo -n "#"
-    sleep 0.01
-done
+for i in {1..20}; do echo -n "#"; sleep 0.02; done
 echo "] COMPLETE"
 
-
-# 2. GENERATE THE CERTIFICATE OF ANALYSIS (PDF)
+# --- STEP 5: GENERATING THE FORENSIC MANIFEST ---
+echo -n "[5/5] GENERATING FORENSIC MANIFEST:   ["
 CERT_FILENAME="data/chute/$BATCH_ID-COA.pdf"
-# --- STEP 5: GENERATING THE CoA ---
-curl -s -o "$CERT_FILENAME" "http://$SERVER_IP:8000/v1/render/pdf/$BATCH_ID"
+
+if [[ "$REMOTE" == "true" ]]; then
+    # THE SETTLING PULSE: We poll for up to 5s to ensure the PDF ore is smelt
+    for i in {1..5}; do
+        curl -s -f -o "$CERT_FILENAME" "http://$SERVER_IP:8000/v1/render/pdf/$BATCH_ID"
+        [[ -s "$CERT_FILENAME" ]] && break
+        echo -n "#"
+        sleep 1.0
+    done
+fi
+
+echo "####################] COMPLETE"
+
 echo "--------------------------------------------------------"
 echo "REFINERY STATUS: QUIESCENT | BATCH: $BATCH_ID COMPLETE"
 echo "LEDGER SECURED: $RAW_FILENAME"
 echo "AUDIT CERTIFICATE: $CERT_FILENAME"
 echo "--------------------------------------------------------"
 
-# Auto-open the Certificate for the user
-open "$CERT_FILENAME" 2>/dev/null || xdg-open "$CERT_FILENAME" 2>/dev/null
-
+# --- STEP 6: PHYSICAL AUTO-OPEN ---
+# We check if the file has MASS before igniting the viewer
+if [ -s "$CERT_FILENAME" ]; then
+    case "$OSTYPE" in
+      darwin*)  open "$CERT_FILENAME" ;; 
+      linux*)   xdg-open "$CERT_FILENAME" >/dev/null 2>&1 & ;;
+      msys*|cygwin*) start "$CERT_FILENAME" ;;
+      *)        echo "MANUAL AUDIT REQUIRED: $CERT_FILENAME" ;;
+    esac
+else
+    echo "ERROR: FRACTURE DETECTED. THE CoA IS WEIGHTLESS (0 bytes)."
+fi
 
