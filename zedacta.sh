@@ -71,37 +71,43 @@ else
 fi
 
 # --- STEP 2: DIRECT INJECTION ---
-echo -n "[2/5] CASTING & IGNITING REACTOR: ["
+echo -n "[2/5] SMELTING DATA ORE... "
 
-# THE ALPHA REPAIR: We launch the upload in the background (&)
+# THE ALPHA REPAIR: Buffer the pipe into memory to prevent Race Conditions
+RAW_DATA=$(cat "$CSV_FILE")
+
+# Extract and validate the payload BEFORE backgrounding the upload
+PAYLOAD=$(python3 -c "import csv, json, io, sys; \
+r=csv.DictReader(io.StringIO(sys.stdin.read())); \
+try:
+    d=[{'id': i+1, '$COL_NAME': row['$COL_NAME'].replace('\n', ' ')} for i, row in enumerate(r) if i < $LIMIT]; \
+    print(json.dumps({'blueprint_class': '$CLASS', 'schema_definition': $SCHEMA, 'data': d}));
+except KeyError:
+    sys.exit(1)" <<< "$RAW_DATA")
+
+if [[ $? -ne 0 ]]; then
+    echo -e "\nERROR: Column '$COL_NAME' not found in the ore. Reactor Refusal."
+    exit 1
+fi
+
+echo "COMPLETE."
+echo -n "[3/5] IGNITING REACTOR: ["
+
+# THE KINETIC STRIKE: Upload the validated payload
 RESPONSE_FILE=$(mktemp)
-python3 -c "import csv, json; \
-r=csv.DictReader(open('$CSV_FILE', 'r')); \
-d=[{'id': i+1, '$COL_NAME': row['$COL_NAME'].replace('\n', ' ')} for i, row in enumerate(r) if i < $LIMIT]; \
-print(json.dumps({ \
-    'blueprint_class': '$CLASS', \
-    'schema_definition': $SCHEMA, \
-    'data': d \
-}))" | \
-curl -si -X POST "http://$SERVER_IP:8000/v1/synthesize" \
+echo "$PAYLOAD" | curl -si -X POST "http://$SERVER_IP:8000/v1/synthesize" \
 -H "Content-Type: application/json" \
--H "X-API-KEY: $API_KEY" \
+-H "X-API-KEY: $BETA_KEY" \
 -d @- > "$RESPONSE_FILE" 2>&1 &
 
-# THE KINETIC MASK: We animate the rail while the PID is alive
 PID=$!
 while kill -0 $PID 2>/dev/null; do
-    echo -n "#"
-    sleep 0.2
+    echo -n "#"; sleep 0.2
 done
-
-# Fill the rest of the rail once the upload is complete
-echo -n "####################"
-echo "] COMPLETE"
+echo "####################] COMPLETE"
 
 RESPONSE=$(cat "$RESPONSE_FILE")
 rm "$RESPONSE_FILE"
-
 
 
 # 2. THE LICENSE PLATE EXTRACTION
