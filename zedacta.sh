@@ -1,32 +1,30 @@
-
 #!/bin/bash
 
 
 SERVER_IP=${Z_SERVER_IP}
 API_KEY=${Z_BETA_KEY}
 
+# --- STEP 0: THE SOVEREIGN ARGUMENT LOOP ---
+CUSTOM_SCHEMA_PATH=""
+REMAINING_ARGS=()
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -f) CUSTOM_SCHEMA_PATH="$2"; shift 2 ;;
+    *) REMAINING_ARGS+=("$1"); shift 1 ;;
+  esac
+done
+
+set -- "${REMAINING_ARGS[@]}"
+
+
+
 CSV_FILE=$1
 COL_NAME=$2
-CUSTOM_SCHEMA_PATH=$4
-SERVER_IP=${5:-$Z_SERVER_IP}
-BETA_KEY=${6:-$Z_BETA_KEY}
-
 LIMIT=${3:-50}
+# Positional fallback if -f wasn't used
+CUSTOM_SCHEMA_PATH=${CUSTOM_SCHEMA_PATH:-$4}
 
-
-# THE ALPHA REPAIR: We pull the first line and 'Shatter' the commas to see the columns
-HEADERS=$(head -n 1 "$CSV_FILE")
-
-echo "DETECTED: [$HEADERS]"
-
-# THE GASKET: Verify the target 'message' is in that manifest
-if [[ ! "$HEADERS" == *"$COL_NAME"* ]]; then
-    echo "--------------------------------------------------------"
-    echo "ERROR: COLUMN IDENTITY FRACTURE"
-    echo "TARGET: '$COL_NAME' NOT FOUND IN MANIFEST."
-    echo "--------------------------------------------------------"
-    exit 1
-fi
 
 if ! command -v python3 &> /dev/null; then
     echo "ERROR: PYTHON 3 NOT DETECTED. THE OBSIDIAN REACTOR REQUIRES A PYTHON CORE FOR INDUCTION."
@@ -59,9 +57,10 @@ fi
 # --- STEP 1: MOLD SELECTION ---
 echo "[1/5] SELECTING ZEDACTA MOLD..."
 
-if [ -n "$CUSTOM_SCHEMA_PATH" ] && [ "$CUSTOM_SCHEMA_PATH" != "-" ]; then
-    CLASS=$(python3 -c "import json, os; print(json.load(open(os.environ['CUSTOM_SCHEMA_PATH'])).get('blueprint_class', 'CUSTOM INDUSTRIAL MOLD'))")
-    SCHEMA=$(python3 -c "import json, os; print(json.dumps(json.load(open(os.environ['CUSTOM_SCHEMA_PATH']))['schema_definition']))")
+if [ -n "$CUSTOM_SCHEMA_PATH" ]; then
+    # AUTOMATIC BYPASS: Direct Intake
+    CLASS=$(python3 -c "import json; print(json.load(open('$CUSTOM_SCHEMA_PATH')).get('blueprint_class', 'CUSTOM INDUSTRIAL MOLD'))")
+    SCHEMA=$(python3 -c "import json; print(json.dumps(json.load(open('$CUSTOM_SCHEMA_PATH'))['schema_definition']))")
 else
     echo "SELECT YOUR ZEDACTA MOLD:"
     echo "1) THE COMPLIANCE AUDITOR  (HYBRID)"
@@ -86,58 +85,37 @@ else
 fi
 
 # --- STEP 2: DIRECT INJECTION ---
-echo -n "[2/5] SMELTING DATA ORE... "
+echo -n "[2/5] CASTING & IGNITING REACTOR: ["
 
-# THE ALPHA REPAIR: We "Armor" the data in the environment to prevent Python parsing errors
-export Z_RAW_ORE=$(cat "$CSV_FILE")
-export Z_COL="$COL_NAME"
-export Z_LIMIT="$LIMIT"
-export Z_SCHEMA="$SCHEMA"
-export Z_CLASS="$CLASS"
-
-PAYLOAD=$(python3 <<'EOF'
-import csv, json, io, sys, os
-try:
-    # We Siphon the ore from the environment, bypassing string literal limits
-    r = csv.DictReader(io.StringIO(os.environ['Z_RAW_ORE']))
-    col = os.environ['Z_COL']
-    limit = int(os.environ['Z_LIMIT'])
-    
-    d = [{'id': i+1, col: row[col].replace('\n', ' ')} for i, row in enumerate(r) if i < limit]
-    
-    print(json.dumps({
-        'blueprint_class': os.environ['Z_CLASS'],
-        'schema_definition': json.loads(os.environ['Z_SCHEMA']),
-        'data': d
-    }))
-except KeyError:
-    sys.exit(1)
-EOF
-)
-
-if [[ $? -ne 0 ]]; then
-    echo -e "\nERROR: Column '$COL_NAME' not found in the ore. Reactor Refusal."
-    exit 1
-fi
-
-echo "COMPLETE."
-echo -n "[2/5] IGNITING REACTOR: ["
-
-# THE KINETIC STRIKE: Upload the validated payload
+# THE ALPHA REPAIR: We launch the upload in the background (&)
 RESPONSE_FILE=$(mktemp)
-echo "$PAYLOAD" | curl -si -X POST "http://$SERVER_IP:8000/v1/synthesize" \
+python3 -c "import csv, json; \
+r=csv.DictReader(open('$CSV_FILE', 'r')); \
+d=[{'id': i+1, '$COL_NAME': row['$COL_NAME'].replace('\n', ' ')} for i, row in enumerate(r) if i < $LIMIT]; \
+print(json.dumps({ \
+    'blueprint_class': '$CLASS', \
+    'schema_definition': $SCHEMA, \
+    'data': d \
+}))" | \
+curl -si -X POST "http://$SERVER_IP:8000/v1/synthesize" \
 -H "Content-Type: application/json" \
--H "X-API-KEY: $BETA_KEY" \
+-H "X-API-KEY: $API_KEY" \
 -d @- > "$RESPONSE_FILE" 2>&1 &
 
+# THE KINETIC MASK: We animate the rail while the PID is alive
 PID=$!
 while kill -0 $PID 2>/dev/null; do
-    echo -n "#"; sleep 0.2
+    echo -n "#"
+    sleep 0.2
 done
-echo "####################] COMPLETE"
+
+# Fill the rest of the rail once the upload is complete
+echo -n "####################"
+echo "] COMPLETE"
 
 RESPONSE=$(cat "$RESPONSE_FILE")
 rm "$RESPONSE_FILE"
+
 
 
 # 2. THE LICENSE PLATE EXTRACTION
@@ -194,8 +172,6 @@ EOF
 
     if [[ "$STATUS" == "COMPLETED" ]]; then
         echo -e "\n"
-        echo "[*] SMELT COMPLETE. SETTLING FORENSIC LEDGER..."
-        sleep 3.0
         break
     fi
     sleep 0.1
@@ -235,4 +211,5 @@ echo "--------------------------------------------------------"
 
 # Auto-open the Certificate for the user
 open "$CERT_FILENAME" 2>/dev/null || xdg-open "$CERT_FILENAME" 2>/dev/null
+
 
