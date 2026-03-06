@@ -14,7 +14,19 @@ BETA_KEY=${6:-$Z_BETA_KEY}
 LIMIT=${3:-50}
 
 
+# THE ALPHA REPAIR: We pull the first line and 'Shatter' the commas to see the columns
+HEADERS=$(head -n 1 "$CSV_FILE")
 
+echo "DETECTED: [$HEADERS]"
+
+# THE GASKET: Verify the target 'message' is in that manifest
+if [[ ! "$HEADERS" == *"$COL_NAME"* ]]; then
+    echo "--------------------------------------------------------"
+    echo "ERROR: COLUMN IDENTITY FRACTURE"
+    echo "TARGET: '$COL_NAME' NOT FOUND IN MANIFEST."
+    echo "--------------------------------------------------------"
+    exit 1
+fi
 
 if ! command -v python3 &> /dev/null; then
     echo "ERROR: PYTHON 3 NOT DETECTED. THE OBSIDIAN REACTOR REQUIRES A PYTHON CORE FOR INDUCTION."
