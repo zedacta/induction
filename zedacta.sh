@@ -43,7 +43,7 @@ fi
 # --- STEP 1: MOLD SELECTION ---
 echo "[1/5] SELECTING ZEDACTA MOLD..."
 
-if [ -n "$CUSTOM_SCHEMA_PATH" ]; then
+if [ -n "$CUSTOM_SCHEMA_PATH" ] && [ "$CUSTOM_SCHEMA_PATH" != "-" ]; then
     # AUTOMATIC BYPASS: Direct Intake
     CLASS=$(python3 -c "import json; print(json.load(open('$CUSTOM_SCHEMA_PATH')).get('blueprint_class', 'CUSTOM INDUSTRIAL MOLD'))")
     SCHEMA=$(python3 -c "import json; print(json.dumps(json.load(open('$CUSTOM_SCHEMA_PATH'))['schema_definition']))")
