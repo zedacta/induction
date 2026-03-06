@@ -44,9 +44,8 @@ fi
 echo "[1/5] SELECTING ZEDACTA MOLD..."
 
 if [ -n "$CUSTOM_SCHEMA_PATH" ] && [ "$CUSTOM_SCHEMA_PATH" != "-" ]; then
-    # AUTOMATIC BYPASS: Direct Intake
-    CLASS=$(python3 -c "import json; print(json.load(open('$CUSTOM_SCHEMA_PATH')).get('blueprint_class', 'CUSTOM INDUSTRIAL MOLD'))")
-    SCHEMA=$(python3 -c "import json; print(json.dumps(json.load(open('$CUSTOM_SCHEMA_PATH'))['schema_definition']))")
+    CLASS=$(python3 -c "import json, os; print(json.load(open(os.environ['CUSTOM_SCHEMA_PATH'])).get('blueprint_class', 'CUSTOM INDUSTRIAL MOLD'))")
+    SCHEMA=$(python3 -c "import json, os; print(json.dumps(json.load(open(os.environ['CUSTOM_SCHEMA_PATH']))['schema_definition']))")
 else
     echo "SELECT YOUR ZEDACTA MOLD:"
     echo "1) THE COMPLIANCE AUDITOR  (HYBRID)"
@@ -73,16 +72,28 @@ fi
 # --- STEP 2: DIRECT INJECTION ---
 echo -n "[2/5] SMELTING DATA ORE... "
 
-RAW_DATA=$(cat "$CSV_FILE")
+# THE ALPHA REPAIR: We "Armor" the data in the environment to prevent Python parsing errors
+export Z_RAW_ORE=$(cat "$CSV_FILE")
+export Z_COL="$COL_NAME"
+export Z_LIMIT="$LIMIT"
+export Z_SCHEMA="$SCHEMA"
+export Z_CLASS="$CLASS"
 
-PAYLOAD=$(python3 <<EOF
-import csv, json, io, sys
-# Bash physically injects the RAW_DATA string here
-r = csv.DictReader(io.StringIO("""$RAW_DATA"""))
+PAYLOAD=$(python3 <<'EOF'
+import csv, json, io, sys, os
 try:
-    # Bash injects the $COL_NAME and $LIMIT variables
-    d = [{'id': i+1, '$COL_NAME': row['$COL_NAME'].replace('\n', ' ')} for i, row in enumerate(r) if i < $LIMIT]
-    print(json.dumps({'blueprint_class': '$CLASS', 'schema_definition': $SCHEMA, 'data': d}))
+    # We Siphon the ore from the environment, bypassing string literal limits
+    r = csv.DictReader(io.StringIO(os.environ['Z_RAW_ORE']))
+    col = os.environ['Z_COL']
+    limit = int(os.environ['Z_LIMIT'])
+    
+    d = [{'id': i+1, col: row[col].replace('\n', ' ')} for i, row in enumerate(r) if i < limit]
+    
+    print(json.dumps({
+        'blueprint_class': os.environ['Z_CLASS'],
+        'schema_definition': json.loads(os.environ['Z_SCHEMA']),
+        'data': d
+    }))
 except KeyError:
     sys.exit(1)
 EOF
@@ -94,7 +105,7 @@ if [[ $? -ne 0 ]]; then
 fi
 
 echo "COMPLETE."
-echo -n "[3/5] IGNITING REACTOR: ["
+echo -n "[2/5] IGNITING REACTOR: ["
 
 # THE KINETIC STRIKE: Upload the validated payload
 RESPONSE_FILE=$(mktemp)
