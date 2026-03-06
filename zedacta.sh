@@ -124,7 +124,7 @@ BATCH_ID=$(echo "$RESPONSE" | grep -i 'X-Zedacta-Batch-ID' | awk '{print $2}' | 
 # 3. THE GAVEL STRIKE: Precision Extraction of the Error Message
 if [[ -z "$BATCH_ID" ]]; then 
     echo "--------------------------------------------------------"
-    echo "FRACTURE: THE REACTOR REFUSED THE ORE (422)"
+    echo "FRACTURE: THE REACTOR REFUSED THE ORE (422). Verify your Server IP and API Key."
     
     # THE ALPHA REPAIR: We target the 'msg' field specifically. 
     # This ignores the 'input' block containing the Enron CSV data.
@@ -134,7 +134,6 @@ if [[ -z "$BATCH_ID" ]]; then
         echo "VERDICT: $ERROR_MSG"
     else
         # Fallback: If no msg found, show just the first 100 characters of detail
-        echo "Structural Failure: Check the Reactor Logs."
         echo "$RESPONSE" | grep -o '{"detail":.*}' | cut -c1-200
     fi
     echo "--------------------------------------------------------"
