@@ -10,7 +10,7 @@ REMAINING_ARGS=()
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    -f) CUSTOM_SCHEMA_PATH="$2"; shift 2 ;;
+    -m) CUSTOM_SCHEMA_PATH="$2"; shift 2 ;;
     *) REMAINING_ARGS+=("$1"); shift 1 ;;
   esac
 done
@@ -32,7 +32,7 @@ if ! command -v python3 &> /dev/null; then
 fi
 
 
-if [ -z "$SERVER_IP" ] || [ -z "$BETA_KEY" ]; then
+if [ -z "$SERVER_IP" ] || [ -z "$API_KEY" ]; then
     echo "ERROR: REACTOR OFFLINE. SET Z_SERVER_IP AND Z_BETA_KEY TO IGNITE."
     exit 1
 fi
