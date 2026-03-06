@@ -23,6 +23,26 @@ if [ -z "$SERVER_IP" ] || [ -z "$BETA_KEY" ]; then
     exit 1
 fi
 
+# THE ALPHA REPAIR: We physically print the available columns to reveal "Visual Slag"
+COL_CHECK=$(python3 -c "import csv, sys; 
+with open('$CSV_FILE', 'r') as f:
+    h = next(csv.reader(f))
+    if '$COL_NAME' in h:
+        print('VALID')
+    else:
+        print('FRACTURE: Available columns are: ' + str(h))
+")
+
+# THE GASKET: We audit the check RIGHT HERE, before Step 1
+if [[ "$COL_CHECK" == FRACTURE* ]]; then
+    echo "--------------------------------------------------------"
+    echo "ERROR: COLUMN IDENTITY FRACTURE"
+    echo "TARGET: '$COL_NAME'"
+    echo "$COL_CHECK" | cut -d':' -f2
+    echo "--------------------------------------------------------"
+    exit 1
+fi
+
 # --- STEP 0: KINETIC GUARDS ---
 if [ -z "$2" ]; then 
     echo "Usage: Z_SERVER_IP=x Z_BETA_KEY=y ./zedacta.sh <csv_file> <column_name> <limit> [optional_schema_path]"
@@ -98,14 +118,7 @@ except KeyError:
     sys.exit(1)
 EOF
 )
-if [[ "$COL_CHECK" == FRACTURE* ]]; then
-    echo "--------------------------------------------------------"
-    echo "ERROR: COLUMN IDENTITY FRACTURE"
-    echo "TARGET: '$COL_NAME'"
-    echo "$COL_CHECK" | cut -d':' -f2
-    echo "--------------------------------------------------------"
-    exit 1
-fi
+
 if [[ $? -ne 0 ]]; then
     echo -e "\nERROR: Column '$COL_NAME' not found in the ore. Reactor Refusal."
     exit 1
