@@ -29,7 +29,7 @@ if ! command -v python3 &> /dev/null; then
 fi
 
 if [ -z "$SERVER_IP" ] || [ -z "$API_KEY" ]; then
-    echo "ERROR: REACTOR OFFLINE. SET Z_SERVER_IP AND Z_BETA_KEY TO IGNITE."
+    echo "ERROR: MISSING CREDENTIALS. SET Z_SERVER_IP AND Z_BETA_KEY TO IGNITE."
     exit 1
 fi
 
@@ -127,7 +127,7 @@ BATCH_ID=$(echo "$RESPONSE" | grep -i 'X-Zedacta-Batch-ID' | awk '{print $2}' | 
 # 3. THE GAVEL STRIKE: Precision Extraction of the Error Message
 if [[ -z "$BATCH_ID" ]]; then 
     echo "--------------------------------------------------------"
-    echo "FRACTURE: THE REACTOR REFUSED THE BLUEPRINT (422). Architecture invalid."
+    echo "FRACTURE: THE REACTOR REFUSED THE BLUEPRINT (422). Invalid Credentials OR Blueprint Architecture."
     
     # THE BLUEPRINT REPAIR: Targeted error extraction from the Pydantic response
     ERROR_MSG=$(echo "$RESPONSE" | grep -o '"msg":"[^"]*"' | head -n 1 | cut -d'"' -f4)
