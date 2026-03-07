@@ -35,7 +35,7 @@ fi
 
 # --- STEP 0: KINETIC GUARDS ---
 if [ -z "$2" ]; then 
-    echo "Usage: Z_SERVER_IP=x Z_BETA_KEY=y ./zedacta.sh <csv_file> <column_name> <limit> [optional_blueprint_path]"
+    echo "Usage: Z_SERVER_IP=x Z_BETA_KEY=y ./zedacta.sh <csv_file> <column_name> [optional_limit] [optional_blueprint_path]"
     exit 1
 fi
 
