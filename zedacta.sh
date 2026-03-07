@@ -230,4 +230,3 @@ if [ -s "$CERT_FILENAME" ]; then
 else
     echo "ERROR: FRACTURE DETECTED. THE CoA IS WEIGHTLESS (0 bytes)."
 fi
-
