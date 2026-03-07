@@ -68,11 +68,11 @@ else
     
     case $MOLD_CHOICE in
       1) CLASS="SOVEREIGN COMPLIANCE AUDIT"
-         JUNCTIONS='[{"field":"extracted_email","pattern":"CLEAN_PII"},{"field":"severity_danger_level","values":["Level-1","Level-2","Level-3"]}]' ;;
+         JUNCTIONS='[{"field":"Email_Address","pattern":"CLEAN_PII"},{"field":"Severity_Danger_Level","values":["Level-1","Level-2","Level-3"]}]' ;;
       2) CLASS="PRIVACY GUARD PROTOCOL"
-         JUNCTIONS='[{"field":"extracted_email","pattern":"CLEAN_PII"},{"field":"Message_Origin_Date","pattern":"STANDARD_DATE"}]' ;;
+         JUNCTIONS='[{"field":"Email_Address","pattern":"CLEAN_PII"},{"field":"Message_Origin_Date","pattern":"STANDARD_DATE"}]' ;;
       3) CLASS="DEPARTMENTAL REFINERY"
-         JUNCTIONS='[{"field":"department_type","values":["Legal","HR","Tech","Operations"]}]' ;;
+         JUNCTIONS='[{"field":"Department_Type","values":["Legal","HR","Tech","Operations"]}]' ;;
       4) read -p "Enter path to <blueprint.json>: " B_PATH
          [[ ! -f "$B_PATH" ]] && echo "ERROR: BLUEPRINT NOT FOUND" && exit 1
          # Extracting class and junctions from the nested 'blueprint' object
