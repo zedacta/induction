@@ -68,11 +68,11 @@ else
     
     case $MOLD_CHOICE in
       1) CLASS="SOVEREIGN COMPLIANCE AUDIT"
-         JUNCTIONS='[{"field":"extracted_email","pattern":"CLEAN_PII"},{"field":"severity_danger_level","description": "Select 'Level-2' if the sender explicitly defines a task as 'critical'. All other routine coordination is 'Level-1' if basic or 'Level-3' if extreme.", "values":["Level-1","Level-2","Level-3"]}]' ;;
+         JUNCTIONS='[{"field":"sender_address","pattern":"CLEAN_PII"},{"field":"severity_level","values":["Level-1","Level-2","Level-3"]}]' ;;
       2) CLASS="PRIVACY GUARD PROTOCOL"
-         JUNCTIONS='[{"field":"extracted_email","pattern":"CLEAN_PII"},{"field":"Message_Origin_Date","pattern":"STANDARD_DATE"}]' ;;
+         JUNCTIONS='[{"field":"sender_address","pattern":"CLEAN_PII"},{"field":"message_origin_date","pattern":"STANDARD_DATE"}]' ;;
       3) CLASS="DEPARTMENTAL REFINERY"
-         JUNCTIONS='[{"field":"department_type","values":["Legal","HR","Tech","Operations"]}]' ;;
+         JUNCTIONS='[{"field":"email_context","values":["Memo", "Schedule", "Trading", "Personal", "Legal"]}]' ;;
       4) read -p "Enter path to <blueprint.json>: " B_PATH
          [[ ! -f "$B_PATH" ]] && echo "ERROR: BLUEPRINT NOT FOUND" && exit 1
          # Extracting class and junctions from the nested 'blueprint' object
