@@ -51,7 +51,6 @@ if [[ "$COL_CHECK" == INVALID* ]]; then
 fi
 
 
-# --- STEP 1: BLUEPRINT SELECTION ---
 echo "[1/5] SELECTING ZEDACTA BLUEPRINT..."
 
 if [ -n "$CUSTOM_BLUEPRINT_PATH" ]; then
@@ -60,22 +59,33 @@ if [ -n "$CUSTOM_BLUEPRINT_PATH" ]; then
     JUNCTIONS=$(python3 -c "import json; b=json.load(open('$CUSTOM_BLUEPRINT_PATH')).get('blueprint', {}); print(json.dumps(b.get('junctions', [])))")
 else
     echo "SELECT YOUR ZEDACTA BLUEPRINT:"
-    echo "1) SOVEREIGN COMPLIANCE AUDIT  (HYBRID)"
-    echo "2) PRIVACY GUARD PROTOCOL      (PHYSICAL)"
-    echo "3) DEPARTMENTAL REFINERY       (SEMANTIC)"
-    echo "4) CUSTOM INDUSTRIAL BLUEPRINT (FILE)"
-    read -p "Choice [1-4]: " MOLD_CHOICE
+    echo "1) COMPLIANCE AUDIT            (HYBRID: Structural + Semantic)"
+    echo "2) PRIVACY GUARD PROTOCOL      (PHYSICAL: Structural + Structural)"
+    echo "3) DEPARTMENTAL REFINERY       (SEMANTIC: Semantic + Semantic)"
+    echo "4) CUSTOM INDUSTRIAL BLUEPRINT (FILE: Your Blueprint.json)"
+    read -p "Choice [1-4]: " BLUEPRINT_CHOICE
     
-    case $MOLD_CHOICE in
-      1) CLASS="SOVEREIGN COMPLIANCE AUDIT"
-         JUNCTIONS='[{"field":"sender_address","pattern":"CLEAN_PII"},{"field":"severity_level","values":["Level-1","Level-2","Level-3"]}]' ;;
-      2) CLASS="PRIVACY GUARD PROTOCOL"
-         JUNCTIONS='[{"field":"sender_address","pattern":"CLEAN_PII"},{"field":"message_origin_date","pattern":"STANDARD_DATE"}]' ;;
-      3) CLASS="DEPARTMENTAL REFINERY"
-         JUNCTIONS='[{"field":"email_context","values":["Memo", "Schedule", "Trading", "Personal", "Legal"]}]' ;;
+    case $BLUEPRINT_CHOICE in
+      1) CLASS="COMMUNICATION_AUDIT"
+         # THE HYBRID: Combines a Physical Pattern with Forensic Reasoning
+         JUNCTIONS='[
+           {"field":"correspondent_address","description":"REFINERY LOGIC: Extract the email of the person Phillip Allen is communicating with. If he is the Sender, extract the Recipient. If he is the Recipient, extract the Sender.","pattern":"CLEAN_PII"},
+           {"field":"severity_level","values":["Level-1","Level-2","Level-3"]}
+         ]' ;;
+      2) CLASS="PRIVACY_GUARD_PROTOCOL"
+         # THE PHYSICAL: Dual-Vector Hardware Enforcement (Regex Only)
+         JUNCTIONS='[
+           {"field":"identity_scrub","description":"Extract the primary non-Enron email address for PII redaction.","pattern":"CLEAN_PII"},
+           {"field":"message_origin_date","description":"Extract the primary message date.","pattern":"STANDARD_DATE"}
+         ]' ;;
+      3) CLASS="DEPARTMENTAL_REFINERY"
+         # THE SEMANTIC: Dual-Vector Reasoning (Enums Only)
+         JUNCTIONS='[
+           {"field":"communication_intent","description":"REFINERY LOGIC: Determine the primary intent. Is this a casual '\''Greeting'\'', a '\''Schedule'\'' request, a '\''Trading'\'' directive, or '\''Legal'\'' posturing?","values":["Greeting", "Schedule", "Trading", "Personal", "Legal"]},
+           {"field":"risk_appraisal","description":"FORENSIC AUDIT: Appraise the risk of this communication. Level-1 is routine. Level-3 is high-risk/toxic.","values":["Level-1", "Level-2", "Level-3"]}
+         ]' ;;
       4) read -p "Enter path to <blueprint.json>: " B_PATH
          [[ ! -f "$B_PATH" ]] && echo "ERROR: BLUEPRINT NOT FOUND" && exit 1
-         # Extracting class and junctions from the nested 'blueprint' object
          CLASS=$(python3 -c "import json; b=json.load(open('$B_PATH')).get('blueprint', {}); print(b.get('class', 'CUSTOM INDUSTRIAL BLUEPRINT'))")
          JUNCTIONS=$(python3 -c "import json; b=json.load(open('$B_PATH')).get('blueprint', {}); print(json.dumps(b.get('junctions', [])))") ;;
       *) echo "FRACTURE: Invalid choice."; exit 1 ;;
@@ -85,24 +95,26 @@ fi
 # --- STEP 2: DIRECT INJECTION ---
 echo -n "[2/5] CASTING & IGNITING REACTOR: ["
 
-# THE BLUEPRINT REPAIR: We nest the architecture and data for the Foundry
+# THE LAMINAR BRIDGE: Exporting ensures the Python sub-process doesn't see 'None'
+export Z_JUNCTIONS_PASS="$JUNCTIONS"
 RESPONSE_FILE=$(mktemp)
-python3 -c "import csv, json, sys; \
+
+# We use double quotes for the python -c to allow Bash variable expansion for $CSV_FILE and $COL_NAME
+python3 -c "import csv, json, sys, os; \
+csv.field_size_limit(10 * 1024 * 1024); \
 r=csv.DictReader(open('$CSV_FILE', 'r')); \
-# THE ENTROPY: Extraction from the raw Ore
-d=[{'id': i+1, '$COL_NAME': row['$COL_NAME'].replace('\n', ' ')} for i, row in enumerate(r) if i < $LIMIT]; \
-# THE ARCHITECTURE: Nesting the Blueprint and Junctions
+d=[{'id': i+1, '$COL_NAME': row.get('$COL_NAME', '').replace('\n', ' ')} for i, row in enumerate(r) if i < $LIMIT]; \
 print(json.dumps({ \
     'blueprint': { \
         'class': '$CLASS', \
-        'junctions': $JUNCTIONS \
+        'junctions': json.loads(os.getenv('Z_JUNCTIONS_PASS', '[]')) \
     }, \
     'data': d \
 }))" | \
 curl -si -X POST "http://$SERVER_IP:8000/v1/synthesize" \
 -H "Content-Type: application/json" \
 -H "X-API-KEY: $API_KEY" \
--d @- > "$RESPONSE_FILE" 2>&1 &
+--data-binary @- > "$RESPONSE_FILE" 2>&1 &
 
 # THE KINETIC MASK: We animate the rail while the PID is alive
 PID=$!
@@ -117,8 +129,6 @@ echo "] COMPLETE"
 
 RESPONSE=$(cat "$RESPONSE_FILE")
 rm "$RESPONSE_FILE"
-
-
 
 
 # 2. THE LICENSE PLATE EXTRACTION
@@ -158,12 +168,14 @@ while true; do
         # Refactored to "STABILIZING JUNCTION" to match the Day 2 narrative
         printf "\033[H\033[JSTABILIZING SYNTHESIS JUNCTION%s\n" "$DOTS"
         ((COUNTER++))
-        sleep 0.1
+        sleep 0.3
         continue
     fi
 
 # THE LAMINAR PULSE: High-Velocity Telemetry from the Foundry
 OUTPUT=$(cat <<EOF
+
+
 ZEDACTA REACTOR PULSE
 --------------------------------------------------------
 $(echo "$PULSE" | python3 -m json.tool)
@@ -172,6 +184,7 @@ EOF
     printf "\033[H\033[J%s\n" "$OUTPUT"
 
     if [[ "$STATUS" == "COMPLETED" ]]; then
+        sleep 0.8 # 
         echo -e "\n"
         break
     fi
@@ -182,51 +195,58 @@ done
 # --- STEP 4: SECURING GAVEL-VERIFIED CONTRACT ---
 echo -n "[4/5] SECURING GAVEL-VERIFIED CONTRACT: ["
 
-# THE BLUEPRINT REPAIR: Default to true unless explicitly set to false
-REMOTE=${REMOTE:-true}
+
 RAW_FILENAME="data/chute/$BATCH_ID.json"
 mkdir -p "data/chute"
 
-if [[ "$REMOTE" == "true" ]]; then
-    # We use -f to fail fast if the Reactor hasn't bit-for-bit sealed the JSON Contract
-    curl -s -f -o "$RAW_FILENAME" "http://$SERVER_IP:8000/v1/results/$BATCH_ID"
-fi
 
-for i in {1..20}; do echo -n "#"; sleep 0.02; done
-echo "] COMPLETE"
+curl -s -f -o "$RAW_FILENAME" "http://$SERVER_IP:8000/v1/results/$BATCH_ID"
+
+# The Loading "Stutter": Makes it look like it's actually verifying bytes
+for i in {1..14}; do 
+    echo -n "#"
+    [[ $i -eq 10 ]]
+    sleep 0.04 
+done
+echo "]"
+
+sleep 1.2 # THE COOLING GAP: Dramatic transition to the final step
 
 # --- STEP 5: GENERATING THE INDUSTRIAL CoA ---
 echo -n "[5/5] GENERATING CERTIFICATE OF ANALYSIS: ["
-CERT_FILENAME="data/chute/$BATCH_ID-COA.pdf"
+CERT_FILENAME="data/chute/$BATCH_ID.pdf"
+mkdir -p "data/chute"
 
-if [[ "$REMOTE" == "true" ]]; then
-    # THE SETTLING PULSE: We poll for up to 5s to ensure the PDF Ore is Smelt
-    for i in {1..5}; do
-        # THE RENDERING JUNCTION: Pulling the official Certificate of Analysis
-        curl -s -f -o "$CERT_FILENAME" "http://$SERVER_IP:8000/v1/render/pdf/$BATCH_ID"
-        [[ -s "$CERT_FILENAME" ]] && break
-        echo -n "#"
-        sleep 1.0
-    done
-fi
+# THE KINETIC SNAP: 15 hashes at 0.04s to match Step 4 exactly
+for i in {1..12}; do 
+    echo -n "#"
+    sleep 0.04 
+done
 
-echo "####################] COMPLETE"
+curl -s -f -o "$CERT_FILENAME" "http://$SERVER_IP:8000/v1/render/pdf/$BATCH_ID" > /dev/null 2>&1
 
+echo "]"
+
+# --- THE FINAL QUIESCENCE ---
 echo "--------------------------------------------------------"
 echo "REFINERY STATUS: QUIESCENT | BATCH: $BATCH_ID COMPLETE"
-echo "CONTRACT SECURED: $RAW_FILENAME"
-echo "CERTIFICATE (CoA): $CERT_FILENAME"
+echo "--------------------------------------------------------"
+echo "MASTER LEDGER: data/chute/$BATCH_ID.json"
+echo "AUDIT CERTIFICATE: $CERT_FILENAME"
 echo "--------------------------------------------------------"
 
-# --- STEP 6: PHYSICAL AUTO-OPEN ---
-# We check if the CoA has MASS before igniting the viewer
-if [ -s "$CERT_FILENAME" ]; then
-    case "$OSTYPE" in
-      darwin*)  open "$CERT_FILENAME" ;; 
-      linux*)   xdg-open "$CERT_FILENAME" >/dev/null 2>&1 & ;;
-      msys*|cygwin*) start "$CERT_FILENAME" ;;
-      *)        echo "MANUAL AUDIT REQUIRED: $CERT_FILENAME" ;;
-    esac
-else
-    echo "ERROR: FRACTURE DETECTED. THE CoA IS WEIGHTLESS (0 bytes)."
+# --- THE SOVEREIGN CHOICE ---
+# We check if the file exists and has size (-s) before prompting
+# This will NOT work on Remote - SSH
+if [[ -s "$CERT_FILENAME" ]]; then
+    echo -n "VIEW AUDIT CERTIFICATE NOW? (y/n): "
+    read -n 1 -r
+    echo "" # Move to new line
+    
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        case "$OSTYPE" in
+          darwin*)  open "$CERT_FILENAME" ;; 
+          linux*)   xdg-open "$CERT_FILENAME" >/dev/null 2>&1 & ;;
+        esac
+    fi
 fi
