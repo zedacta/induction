@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 SERVER_IP=${Z_SERVER_IP}
 API_KEY=${Z_BETA_KEY}
 
@@ -66,7 +65,7 @@ else
     read -p "Choice [1-4]: " BLUEPRINT_CHOICE
     
     case $BLUEPRINT_CHOICE in
-      1) CLASS="COMMUNICATION_AUDIT"
+      1) CLASS="COMPLIANCE_AUDIT"
          # THE HYBRID: Combines a Physical Pattern with Forensic Reasoning
          JUNCTIONS='[
            {"field":"correspondent_address","description":"REFINERY LOGIC: Extract the email of the person Phillip Allen is communicating with. If he is the Sender, extract the Recipient. If he is the Recipient, extract the Sender.","pattern":"CLEAN_PII"},
